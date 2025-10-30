@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useBetData } from '@/hooks/useBetData';
+import { colors } from '@/constants/colors';
 
 export function ActivePositions() {
     const { data: betData, loading } = useBetData();
@@ -69,12 +70,24 @@ export function ActivePositions() {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1A1A1A',
+        backgroundColor: colors.glassBackground,
         borderRadius: 12,
         padding: 16,
         margin: 16,
         borderWidth: 1,
-        borderColor: '#333333',
+        borderColor: colors.glassBorder,
+        ...(Platform.OS === 'web' && {
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px 0 rgba(139, 92, 246, 0.15)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 5,
+        }),
     },
     header: {
         flexDirection: 'row',
@@ -95,9 +108,11 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     positionCard: {
-        backgroundColor: '#2A2A2A',
+        backgroundColor: colors.glassBackgroundLight,
         borderRadius: 8,
         padding: 12,
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
     },
     positionHeader: {
         flexDirection: 'row',

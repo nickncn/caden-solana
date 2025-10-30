@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/constants/colors';
 import { useWebWallet } from './WebWalletProvider';
 
@@ -47,15 +48,21 @@ export function WalletButton() {
     };
 
     return (
-        <TouchableOpacity style={styles.button} onPress={handlePress}>
-            <Text style={styles.buttonText}>{getDisplayText()}</Text>
+        <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
+            <LinearGradient
+                colors={colors.gradientPrimary as [string, string]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+            >
+                <Text style={styles.buttonText}>{getDisplayText()}</Text>
+            </LinearGradient>
         </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
     button: {
-        backgroundColor: colors.primary,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { colors } from '@/constants/colors';
 import { useBetData } from '@/hooks/useBetData';
 import { useRouter } from 'expo-router';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export function PositionCard() {
     const { data: betData, loading, error } = useBetData();
@@ -110,13 +111,27 @@ export function PositionCard() {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.glassBackground,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.borderLight,
+        borderColor: colors.glassBorder,
         padding: 16,
         marginHorizontal: 20,
         marginVertical: 8,
+        ...(Platform.OS === 'web' && {
+            marginHorizontal: 0,
+            padding: 24,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px 0 rgba(139, 92, 246, 0.15)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 5,
+        }),
     },
     header: {
         flexDirection: 'row',

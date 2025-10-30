@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Platform } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { colors } from '@/constants/colors';
 import { useMarketData } from '@/hooks/useMarketData';
-
-const screenWidth = Dimensions.get('window').width;
+import { useResponsive } from '@/hooks/useResponsive';
 
 export function SpreadHeatmap() {
     const { data: marketData, loading, error } = useMarketData();
+    const { width: screenWidth, isDesktop } = useResponsive();
     const [spreadHistory, setSpreadHistory] = useState<Array<{ slot: number, spread: number }>>([
         { slot: 0, spread: 200 }, // Initialize with realistic spread data
         { slot: 1, spread: 200 },
         { slot: 2, spread: 200 }
     ]);
+    const [chartWidth, setChartWidth] = useState<number | null>(null);
 
     // Update spread history when market data changes (400ms updates) - only when data actually changes
     useEffect(() => {
@@ -90,11 +91,14 @@ export function SpreadHeatmap() {
                 </View>
             </View>
 
-            <View style={styles.chartContainer}>
+            <View
+                style={styles.chartContainer}
+                onLayout={e => setChartWidth(e.nativeEvent.layout.width)}
+            >
                 <LineChart
                     data={chartData}
-                    width={screenWidth - 40}
-                    height={180}
+                    width={chartWidth ?? (isDesktop ? Math.min(screenWidth - 120, 800) : screenWidth - 40)}
+                    height={isDesktop ? 220 : 180}
                     chartConfig={chartConfig}
                     bezier
                     style={styles.chart}
@@ -120,13 +124,28 @@ export function SpreadHeatmap() {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.glassBackground,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.borderLight,
+        borderColor: colors.glassBorder,
         padding: 16,
         marginHorizontal: 20,
         marginVertical: 8,
+        minHeight: 180,
+        ...(Platform.OS === 'web' && {
+            marginHorizontal: 0,
+            padding: 24,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px 0 rgba(139, 92, 246, 0.15)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 5,
+        }),
     },
     header: {
         flexDirection: 'row',
@@ -162,6 +181,9 @@ const styles = StyleSheet.create({
     chartContainer: {
         alignItems: 'center',
         marginBottom: 16,
+        overflow: 'hidden',
+        width: '100%',
+        borderRadius: 16,
     },
     chart: {
         borderRadius: 16,

@@ -84,14 +84,28 @@ export function MarketCard() {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.glassBackground,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.borderLight,
+        borderColor: colors.glassBorder,
         padding: 16,
         marginHorizontal: 20,
         marginVertical: 8,
         minHeight: 180, // Fixed min height to prevent jumping
+        ...(Platform.OS === 'web' && {
+            marginHorizontal: 0,
+            padding: 24,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px 0 rgba(139, 92, 246, 0.15)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 5,
+        }),
     },
     header: {
         flexDirection: 'row',
@@ -130,10 +144,12 @@ const styles = StyleSheet.create({
     },
     priceCard: {
         flex: 1,
-        backgroundColor: colors.surfaceVariant,
+        backgroundColor: colors.glassBackgroundLight,
         borderRadius: 12,
         padding: 12,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
     },
     priceLabel: {
         fontSize: 12,
@@ -149,9 +165,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: colors.surfaceVariant,
+        backgroundColor: colors.glassBackgroundLight,
         borderRadius: 12,
         padding: 12,
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
     },
     spreadLabel: {
         fontSize: 14,

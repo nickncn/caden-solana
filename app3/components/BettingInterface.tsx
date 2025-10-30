@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/constants/colors';
 import { useCadenProgram } from '@/hooks/useCadenProgram';
 import { useWallet } from '@/hooks/useWallet';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export function BettingInterface() {
     const [direction, setDirection] = useState<'long' | 'short'>('long');
@@ -17,6 +19,7 @@ export function BettingInterface() {
 
     const { program, connection } = useCadenProgram();
     const { publicKey } = useWallet();
+    const { isDesktop } = useResponsive();
 
     const handlePlaceBet = async () => {
         if (!publicKey) {
@@ -107,7 +110,7 @@ export function BettingInterface() {
 
             // Show success alert with clickable link
             Alert.alert(
-                'Bet Placed! 🎉',
+                'Bet Placed!',
                 `Successfully placed ${direction.toUpperCase()} bet of $${amount} on ${asset}\n\nTX: ${signature.slice(0, 8)}...${signature.slice(-8)}\n\nView on Solscan: ${solscanUrl}`,
                 [
                     {
@@ -153,7 +156,7 @@ export function BettingInterface() {
                         setTxHash('already-processed');
                         setTxStatus('success');
                         Alert.alert(
-                            'Bet Placed! 🎉',
+                            'Bet Placed!',
                             `Your ${direction.toUpperCase()} bet of $${amount} on ${asset} was placed successfully!\n\nThe transaction was already processed on the blockchain.`,
                             [{
                                 text: 'OK', onPress: () => {
@@ -226,7 +229,7 @@ export function BettingInterface() {
                             onPress={() => setDirection('long')}
                         >
                             <Text style={[styles.directionText, direction === 'long' && styles.directionTextActive]}>
-                                LONG 📈
+                                LONG
                             </Text>
                             <Text style={styles.directionSubtext}>Price goes up</Text>
                         </TouchableOpacity>
@@ -235,7 +238,7 @@ export function BettingInterface() {
                             onPress={() => setDirection('short')}
                         >
                             <Text style={[styles.directionText, direction === 'short' && styles.directionTextActive]}>
-                                SHORT 📉
+                                SHORT
                             </Text>
                             <Text style={styles.directionSubtext}>Price goes down</Text>
                         </TouchableOpacity>
@@ -258,27 +261,39 @@ export function BettingInterface() {
 
                 {/* Place Bet Button */}
                 <TouchableOpacity
-                    style={[
-                        styles.betButton,
-                        isBetting && styles.betButtonDisabled,
-                        txStatus === 'success' && styles.betButtonSuccess,
-                        txStatus === 'error' && styles.betButtonError
-                    ]}
                     onPress={handlePlaceBet}
                     disabled={isBetting}
+                    style={styles.betButtonContainer}
+                    activeOpacity={0.8}
                 >
-                    {isBetting ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <ActivityIndicator color="#FFFFFF" />
+                    <LinearGradient
+                        colors={
+                            txStatus === 'success'
+                                ? colors.gradientSuccess as [string, string]
+                                : txStatus === 'error'
+                                    ? colors.gradientDanger as [string, string]
+                                    : colors.gradientPrimary as [string, string]
+                        }
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[
+                            styles.betButton,
+                            isBetting && styles.betButtonDisabled,
+                        ]}
+                    >
+                        {isBetting ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <ActivityIndicator color="#FFFFFF" />
+                                <Text style={styles.betButtonText}>
+                                    {txStatus === 'pending' ? 'Waiting for confirmation...' : 'Processing...'}
+                                </Text>
+                            </View>
+                        ) : (
                             <Text style={styles.betButtonText}>
-                                {txStatus === 'pending' ? 'Waiting for confirmation...' : 'Processing...'}
+                                Place {direction.toUpperCase()} Bet: ${amount}
                             </Text>
-                        </View>
-                    ) : (
-                        <Text style={styles.betButtonText}>
-                            Place {direction.toUpperCase()} Bet: ${amount}
-                        </Text>
-                    )}
+                        )}
+                    </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Transaction Status Display */}
@@ -319,11 +334,33 @@ export function BettingInterface() {
 const styles = StyleSheet.create({
     container: {
         padding: 16,
+        ...(Platform.OS === 'web' && {
+            maxWidth: 1200,
+            width: '100%',
+            alignSelf: 'center',
+            paddingHorizontal: 40,
+        }),
     },
     card: {
-        backgroundColor: '#1A1A1A',
+        backgroundColor: colors.glassBackground,
         borderRadius: 12,
         padding: 20,
+        borderWidth: 1,
+        borderColor: colors.glassBorder,
+        ...(Platform.OS === 'web' && {
+            padding: 32,
+            borderRadius: 16,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px 0 rgba(139, 92, 246, 0.15)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 12,
+            elevation: 5,
+        }),
         marginBottom: 16,
     },
     cardTitle: {
@@ -350,11 +387,14 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,
-        backgroundColor: '#2A2A2A',
+        backgroundColor: colors.glassBackgroundLight,
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
         alignItems: 'center',
     },
     assetButtonActive: {
-        backgroundColor: '#8B5CF6',
+        backgroundColor: colors.primary,
+        borderColor: colors.glassBorder,
     },
     assetButtonText: {
         fontSize: 16,
@@ -373,14 +413,18 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         paddingHorizontal: 16,
         borderRadius: 8,
-        backgroundColor: '#2A2A2A',
+        backgroundColor: colors.glassBackgroundLight,
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
         alignItems: 'center',
     },
     longButton: {
-        backgroundColor: '#059669',
+        backgroundColor: colors.success,
+        borderColor: colors.glowSuccess,
     },
     shortButton: {
-        backgroundColor: '#DC2626',
+        backgroundColor: colors.danger,
+        borderColor: colors.glowDanger,
     },
     directionText: {
         fontSize: 16,
@@ -396,39 +440,49 @@ const styles = StyleSheet.create({
         color: '#BBBBBB',
     },
     input: {
-        backgroundColor: '#2A2A2A',
+        backgroundColor: colors.glassBackgroundLight,
+        borderWidth: 1,
+        borderColor: colors.glassBorderLight,
         borderRadius: 8,
         padding: 16,
         fontSize: 16,
         color: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#444444',
     },
     hint: {
         fontSize: 12,
         color: '#666666',
         marginTop: 4,
     },
-    betButton: {
-        backgroundColor: '#8B5CF6',
-        paddingVertical: 16,
-        borderRadius: 8,
-        alignItems: 'center',
+    betButtonContainer: {
         marginTop: 8,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    betButton: {
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        ...(Platform.OS === 'web' && {
+            paddingVertical: 18,
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 15px 0 rgba(139, 92, 246, 0.4)',
+        }),
+        ...(Platform.OS !== 'web' && {
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.5,
+            shadowRadius: 8,
+            elevation: 8,
+        }),
     },
     betButtonDisabled: {
-        opacity: 0.5,
+        opacity: 0.6,
     },
     betButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: '#FFFFFF',
-    },
-    betButtonSuccess: {
-        backgroundColor: '#059669',
-    },
-    betButtonError: {
-        backgroundColor: '#DC2626',
     },
     statusContainer: {
         marginTop: 12,
@@ -456,9 +510,9 @@ const styles = StyleSheet.create({
         marginTop: 8,
         paddingVertical: 8,
         paddingHorizontal: 16,
-        backgroundColor: '#8B5CF6',
         borderRadius: 6,
         alignItems: 'center',
+        overflow: 'hidden',
     },
     linkButtonText: {
         fontSize: 14,
