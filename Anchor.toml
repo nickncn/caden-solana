@@ -1,0 +1,22 @@
+[toolchain]
+package_manager = "yarn"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+caden = "n7WCkWeHsJtEWdG4RQarVvLTdeWTdqX91xxMXb4oGF7"
+
+[programs.devnet]
+caden = "3ZstoPk7ho2fAyotF3NTKFjJESr21qAjNXQuVaGSpQ5L"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "devnet"
+wallet = "/Users/n/my-solana-wallet.json"
+
+[scripts]
+test = "yarn run mocha -t 1000000 tests/"
