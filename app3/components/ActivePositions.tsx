@@ -4,10 +4,45 @@ import { useBetData } from '@/hooks/useBetData';
 import { colors } from '@/constants/colors';
 
 export function ActivePositions() {
-    const { data: betData, loading } = useBetData();
+    const { data: betData, loading, error } = useBetData();
 
-    // Filter active (unsettled) bets
-    const activeBets = betData?.filter(bet => !bet.isSettled) || [];
+    // Early return for loading state (same pattern as PositionCard)
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Active Bets</Text>
+                    <Text style={styles.count}>Loading...</Text>
+                </View>
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>Loading bets...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Early return for error state
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Active Bets</Text>
+                    <Text style={styles.count}>Error</Text>
+                </View>
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>Error loading bets</Text>
+                    <Text style={styles.emptySubtext}>{error}</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // Filter active (unsettled) bets - check both camelCase and snake_case for compatibility
+    const activeBets = betData?.filter(bet => {
+        // Handle potential field name mismatch (isSettled vs is_settled)
+        const isSettled = (bet as any).isSettled ?? (bet as any).is_settled ?? false;
+        return !isSettled;
+    }) || [];
 
     const renderBet = (bet: any) => {
         const betAmountUSD = (bet.betAmount || 0) / 1_000000;

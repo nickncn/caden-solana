@@ -71,35 +71,25 @@ export function BettingInterface() {
 
             console.log('📝 Creating transaction...');
 
-            // Build the transaction instruction
-            const ix = await (program.methods as any).placeBet(
+            // Use .rpc() method - it handles signing and sending automatically via wallet adapter
+            console.log('📤 Sending transaction...');
+            const signature = await (program.methods as any).placeBet(
                 asset,
                 { crypto: {} },
                 new BN(betAmount * 1_000000), // Convert to 6 decimals
                 direction === 'long',
                 new BN(betSeed)
-            ).accounts({
-                bet: betPDA,
-                multiOracle: multiOraclePDA,
-                user: publicKey,
-                systemProgram: SystemProgram.programId,
-            }).instruction();
-
-            // Create and send transaction manually to get full control
-            console.log('📤 Sending transaction...');
-            const signature = await (window as any).solana.sendTransaction(ix, connection, {
-                preflightCommitment: 'confirmed',
-            });
-
-            console.log('📊 Transaction sent:', signature);
-
-            // Wait for confirmation
-            console.log('⏳ Waiting for confirmation...');
-            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+            )
+                .accounts({
+                    bet: betPDA,
+                    multiOracle: multiOraclePDA,
+                    user: publicKey,
+                    systemProgram: SystemProgram.programId,
+                })
+                .rpc(); // This automatically signs via wallet adapter and sends the transaction
 
             console.log('✅ Transaction confirmed!');
             console.log('Signature:', signature);
-            console.log('Confirmation:', confirmation);
 
             // Create Solscan URL
             const solscanUrl = `https://solscan.io/tx/${signature}?cluster=devnet`;
@@ -300,7 +290,7 @@ export function BettingInterface() {
                 {txStatus === 'success' && txHash && txHash !== 'already-processed' && (
                     <View style={styles.statusContainer}>
                         <Text style={styles.successText}>
-                            ✅ Bet placed successfully!
+                            Bet placed successfully!
                         </Text>
                         <Text style={styles.txHashText}>
                             TX: {txHash.slice(0, 8)}...{txHash.slice(-8)}
@@ -314,7 +304,7 @@ export function BettingInterface() {
                             }}
                             style={styles.linkButton}
                         >
-                            <Text style={styles.linkButtonText}>🔗 View on Solscan</Text>
+                            <Text style={styles.linkButtonText}>View on Solscan</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -322,7 +312,7 @@ export function BettingInterface() {
                 {txStatus === 'error' && errorMessage && (
                     <View style={styles.statusContainer}>
                         <Text style={styles.errorText}>
-                            ❌ Error: {errorMessage}
+                            Error: {errorMessage}
                         </Text>
                     </View>
                 )}

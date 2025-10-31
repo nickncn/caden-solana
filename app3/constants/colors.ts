@@ -21,10 +21,10 @@ export const colors = {
     borderLight: 'rgba(255, 255, 255, 0.1)', // Light borders
 
     // Enhanced Glass morphism
-    glassBackground: 'rgba(15, 10, 46, 0.4)', // Dark purple tinted, more transparent
-    glassBackgroundLight: 'rgba(26, 10, 62, 0.5)', // Lighter purple tint
-    glassBorder: 'rgba(139, 92, 246, 0.2)', // Lighter purple border
-    glassBorderLight: 'rgba(255, 255, 255, 0.1)', // Softer light border
+    glassBackground: 'rgba(26, 26, 38, 0.7)',
+    glassBackgroundLight: 'rgba(40, 40, 50, 0.6)',
+    glassBorder: 'rgba(139, 92, 246, 0.3)',
+    glassBorderLight: 'rgba(255, 255, 255, 0.15)',
     glassHover: 'rgba(139, 92, 246, 0.2)',
     glassLight: 'rgba(255, 255, 255, 0.05)',
 

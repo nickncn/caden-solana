@@ -1,43 +1,70 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { colors } from '@/constants/colors';
+import { useBetData } from '@/hooks/useBetData';
 
 export function RecentActivity() {
-    // Mock data for demo - in real app this would come from API
-    const mockActivity = [
-        {
-            id: '1',
-            type: 'win',
-            asset: 'BTC',
-            amount: 23.45,
-            timestamp: '2 min ago',
-            txHash: 'abc123...def456',
-        },
-        {
-            id: '2',
-            type: 'loss',
-            asset: 'ETH',
-            amount: -8.90,
-            timestamp: '1 hour ago',
-            txHash: 'xyz789...ghi012',
-        },
-        {
-            id: '3',
-            type: 'mint',
-            asset: 'AAPL',
-            amount: 0,
-            timestamp: '3 hours ago',
-            txHash: 'mno345...pqr678',
-        },
-        {
-            id: '4',
-            type: 'win',
-            asset: 'SOL',
-            amount: 15.20,
-            timestamp: '1 day ago',
-            txHash: 'stu901...vwx234',
-        },
-    ];
+    const { data: betData, loading } = useBetData();
+
+    // Format timestamp relative to now based on createdSlot
+    const formatTimestamp = (createdSlot: number) => {
+        // Rough estimate: slots advance roughly every 400ms
+        // Get current slot estimate (approximate)
+        const currentSlot = Date.now() / 400; // Rough slot estimate
+        const slotDiff = currentSlot - createdSlot;
+        const minutesAgo = Math.floor(slotDiff * 400 / 60000); // Convert to minutes
+
+        if (minutesAgo < 1) return 'Just now';
+        if (minutesAgo < 60) return `${minutesAgo} min ago`;
+        const hoursAgo = Math.floor(minutesAgo / 60);
+        if (hoursAgo < 24) return `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
+        const daysAgo = Math.floor(hoursAgo / 24);
+        return `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
+    };
+
+    // Generate activity from bet data
+    const activityData = useMemo(() => {
+        if (!betData || betData.length === 0) return [];
+
+        // Sort by createdSlot (most recent first) and take last 10
+        const sortedBets = [...betData]
+            .sort((a, b) => (b.createdSlot || 0) - (a.createdSlot || 0))
+            .slice(0, 10);
+
+        return sortedBets.map((bet) => {
+            const isSettled = bet.isSettled ?? false;
+            const betAmountUSD = (bet.betAmount || 0) / 1_000000;
+            const settlementUSD = (bet.settlementValue || 0) / 1_000000;
+
+            let type = 'mint'; // Default for active bets
+            let amount = 0;
+
+            if (isSettled && bet.settlementValue > 0) {
+                // Calculate P&L
+                const pnl = settlementUSD - betAmountUSD;
+                if (pnl > 0) {
+                    type = 'win';
+                    amount = pnl;
+                } else if (pnl < 0) {
+                    type = 'loss';
+                    amount = pnl;
+                }
+            }
+
+            // Generate transaction hash placeholder (in production, fetch from blockchain)
+            const txHash = `tx${bet.betId}${bet.createdSlot}`.slice(0, 16) + '...' + bet.betId.toString().slice(-6);
+
+            return {
+                id: bet.betId.toString(),
+                type,
+                asset: bet.assetSymbol,
+                amount,
+                timestamp: formatTimestamp(bet.createdSlot || 0),
+                txHash,
+                betId: bet.betId,
+            };
+        });
+    }, [betData]);
 
     const renderActivityItem = (item: any) => {
         const isWin = item.type === 'win';
@@ -49,18 +76,26 @@ export function RecentActivity() {
         let description = '';
 
         if (isWin) {
-            icon = '🎉';
+            icon = '';
             color = '#10B981';
             description = `Won ${item.asset} bet`;
         } else if (isLoss) {
-            icon = '📉';
+            icon = '';
             color = '#EF4444';
             description = `Lost ${item.asset} bet`;
         } else if (isMint) {
-            icon = '🎨';
+            icon = '';
             color = '#8B5CF6';
-            description = `Minted ${item.asset} slot`;
+            description = `Placed ${item.asset} bet`;
         }
+
+        const handleTxClick = () => {
+            // In production, open Solscan link
+            const solscanUrl = `https://solscan.io/tx/${item.txHash}?cluster=devnet`;
+            if (typeof window !== 'undefined') {
+                window.open(solscanUrl, '_blank');
+            }
+        };
 
         return (
             <View key={item.id} style={styles.activityItem}>
@@ -77,20 +112,52 @@ export function RecentActivity() {
                             {item.amount > 0 ? '+' : ''}${item.amount.toFixed(2)}
                         </Text>
                     )}
-                    <Text style={styles.activityTx}>
-                        {item.txHash.slice(0, 8)}...{item.txHash.slice(-6)}
-                    </Text>
+                    <TouchableOpacity onPress={handleTxClick}>
+                        <Text style={styles.activityTx}>
+                            {item.txHash}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         );
     };
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>Recent Activity</Text>
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>Loading activity...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    if (!betData || betData.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>Recent Activity</Text>
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyText}>No recent activity</Text>
+                    <Text style={styles.emptySubtext}>Your bets and transactions will appear here</Text>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Recent Activity</Text>
 
             <ScrollView style={styles.activityList} showsVerticalScrollIndicator={false}>
-                {mockActivity.map(renderActivityItem)}
+                {activityData.length > 0 ? (
+                    activityData.map(renderActivityItem)
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyText}>No recent activity</Text>
+                        <Text style={styles.emptySubtext}>Your bets and transactions will appear here</Text>
+                    </View>
+                )}
             </ScrollView>
         </View>
     );
@@ -167,5 +234,19 @@ const styles = StyleSheet.create({
         color: '#666666',
         marginTop: 2,
         fontFamily: 'monospace',
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 20,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        marginBottom: 8,
+    },
+    emptySubtext: {
+        fontSize: 12,
+        color: '#BBBBBB',
+        textAlign: 'center',
     },
 });
