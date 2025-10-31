@@ -1,0 +1,30 @@
+{
+    "expo": {
+        "name": "Caden",
+        "slug": "caden-mobile",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "scheme": "caden",
+        "userInterfaceStyle": "dark",
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.caden.mobile"
+        },
+        "android": {
+            "package": "com.caden.mobile"
+        },
+        "web": {
+            "bundler": "metro",
+            "output": "static"
+        },
+        "plugins": [
+            "expo-router"
+        ],
+        "experiments": {
+            "typedRoutes": true
+        }
+    }
+}
